@@ -1,0 +1,46 @@
+﻿@model Mockbster.Models.CartModel
+
+@{
+    ViewData["Title"] = "Index";
+}
+
+<h1>Index</h1>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>
+                Title
+            </th>
+            <th>
+                Days
+            </th>
+            <th>
+                Action
+            </th>
+            <th></th>
+        </tr>
+    </thead>
+        <tbody>
+            @foreach (var item in Model.Movies!) {
+            <tr>
+                <td>
+                    @Html.DisplayFor(modelItem => item.Item3.Title)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.Item2)
+                </td>
+                <td>
+                    <a asp-action="Edit" asp-route-id="@Model.Movies.IndexOf(item)" asp-route-day="1">+1 Day</a> |
+                    <a asp-action="Edit" asp-route-id="@Model.Movies.IndexOf(item)" asp-route-day="-1">-1 Day</a> |
+                    <a asp-action="Delete" asp-route-id="@Model.Movies.IndexOf(item)">Delete</a>
+                </td>
+            </tr>
+            }
+            <tr>
+                <td colspan="3">
+                    <a asp-action="Finalize">Pay</a>
+                </td>
+            </tr>
+        </tbody>
+</table>

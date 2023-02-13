@@ -1,0 +1,40 @@
+﻿@model Mockbster.Models.MovieUserModel
+
+@{
+    ViewData["Title"] = "Index";
+}
+
+<form asp-controller="MoviesUser" asp-action="Index" method="get">
+    <p>
+        Title: <input type="text" asp-for="movieTitle" />
+
+        <select asp-for="MovieGenre" asp-items="Model.Genres">
+            <option value="">All</option>
+        </select>
+
+        Max Price: <input type="number" asp-for="maxPrice" />
+        <input type="submit" value="Filter" />
+        @*<input type="button" value="Register" class="btn btn-primary" onclick="location.href='@Url.Action("Cart", "MoviesUser")'" />*@
+    </p>
+</form>
+<div class="products">
+    @foreach (var item in Model.Movies!)
+    {
+        string? fName = item.ImgName;
+        string? title = item.Title;
+        <div class="product">
+            @*<h1>@Html.DisplayFor(modelItem => item.Title)</h1>*@
+            <div class="productAlt">
+                <img class="pImg2" src="@Href("~/img/"+fName+".jpg")" alt="<@title>" />
+                <div class="details">
+                    <h2>@Html.DisplayFor(modelItem => item.Title)</h2>
+                    <div class="desc">@Html.DisplayFor(modelItem => item.Genre)<br />@Html.DisplayFor(modelItem => item.ReleaseDate)</div>
+                    <div class="bottom">
+                        <span class="price">@Html.DisplayFor(modelItem => item.Price)</span>
+                        <a class="addButton" asp-controller="MoviesUser" asp-action="Rent" asp-route-id="@item.Id">Rent</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
