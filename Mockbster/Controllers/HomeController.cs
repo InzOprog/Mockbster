@@ -8,63 +8,51 @@ namespace Mockbster.Controllers
 {
     public class HomeController : Controller
     {
-        private List<MovieModel> movies = new List<MovieModel>();
-
         private readonly MockbsterContext _context;
-
-        public HomeController(MockbsterContext context)
-        {
-            _context = context;
-        }
+        public HomeController(MockbsterContext context) { _context = context; }
         public async Task<IActionResult> Index(
-            string username,
-            string password,
+            string? username,
+            string? password,
             bool notUsed
             )
         {
+            var defaultResponse = new LoginModel
+            {
+                UserData = new UserModel(),
+                ErrorMessage = ""
+            };
             if ((username == null || password == null) &&
                 HttpContext.Request.Cookies["loggedUser"] == null)
             {
-                return View();
+                return View(defaultResponse);
             }
-
-            if (_context.User == null)
-            {
-                return Problem("Entity set 'MvcMovieContext.User'  is null.");
-            }
-
             // Use LINQ to get list of genres.
-            var users = from m in _context.User
-                        select m;
+            var users = from m in _context.User select m;
 
+            // SELECT * FROM User WHERE User.Username = username
             if (!string.IsNullOrEmpty(username))
-            {
                 users = users.Where(s => s.Username!.Contains(username));
-            }
 
+            // SELECT * FROM User WHERE User.Username = username AND User.Password = password
             if (!string.IsNullOrEmpty(password))
-            {
-                users = users.Where(x => x.Password.Contains(password));
-            }
+                users = users.Where(x => x.Password!.Contains(password));
 
-            if (users.Count() == 1 || HttpContext.Request.Cookies["loggedUser"] != null)
-            {
-                if (username == null)
-                {
-                    username = HttpContext.Request.Cookies["loggedUser"];
-                }
-                HttpContext.Response.Cookies.Append("loggedUser", username, 
-                    new Microsoft.AspNetCore.Http.CookieOptions
-                    {
-                        Expires = DateTime.Now.AddHours(1),
-                    });
-                if (username == "Admin" || HttpContext.Request.Cookies["loggedUser"] == "Admin")
-                    return Redirect("/Movies");
-                return Redirect("/MoviesUser");
-            } else
-            {
-                return View();
-            }
+            var cookieUsername = HttpContext.Request.Cookies["loggedUser"];
+            
+            // User.Username is unique. Expected result for passed both if(){} is one element if user present.
+            defaultResponse.ErrorMessage = "Wrong username or Password";
+            if (users.Count() != 1 && cookieUsername == null) return View(defaultResponse);
+            // If username is null, write cookieUsername to username
+           
+            var uname = username;
+            uname ??= cookieUsername;
+            // Logged in for max 1 hour.
+            HttpContext.Response.Cookies.Append("loggedUser", uname!, 
+                new CookieOptions { Expires = DateTime.Now.AddHours(1) });
+
+            // If user is admin, sent to admin page, else to movie rental page
+            return Redirect(users.FirstOrDefault()!.IsAdmin ? "/Movies" : "/MoviesUser");
+
         }
 
         public IActionResult Privacy()
@@ -80,26 +68,18 @@ namespace Mockbster.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create([Bind("Id,Firstname,Lastname,Email,Username,Password")] UserModel user)
         {
-            if (ModelState.IsValid)
-            {
+            if (!ModelState.IsValid) return View(user);
+            var users = from m in _context.User
+                select m;
+            if (!string.IsNullOrEmpty(user.Username))
+                users = users.Where(s => s.Username!.Contains(user.Username));
 
-                var users = from m in _context.User
-                            select m;
-                if (!string.IsNullOrEmpty(user.Username))
-                {
-                    users = users.Where(s => s.Username!.Contains(user.Username));
-                }
-
-                if (users.Count() > 0)
-                    return View();
-
-
-
-                _context.Add(user);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
-            }
-            return View(user);
+            if (users.Any())
+                return View();
+            
+            _context.Add(user);
+            await _context.SaveChangesAsync();
+            return RedirectToAction(nameof(Index));
         }
 
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]

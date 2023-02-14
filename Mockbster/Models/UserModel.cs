@@ -20,4 +20,6 @@ public class UserModel
     [StringLength(20, MinimumLength = 3)]
     [Required]
     public string? Password { get; set; }
+
+    public bool IsAdmin { get; set; } = false;
 }

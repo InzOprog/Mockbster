@@ -8,9 +8,11 @@ public class OrderModel
     public int UserId { get; set; }
     public int MovieId { get; set; }
     [DataType(DataType.Date)]
+    [Display(Name = "Rental begin date")]
     public DateTime OrderBegin { get; set; }
     [DataType(DataType.Date)]
+    [Display(Name = "Rental end date")]
     public DateTime OrderEnd { get; set; }
-    [DataType(DataType.Date)]
-    public DateTime? ProductReturn { get; set; }
+    [Display(Name = "Rental price")]
+    public double? PaidAmount { get; set; }
 }

@@ -14,97 +14,76 @@ namespace Mockbster.Controllers
 {
     public class OrdersController : Controller
     {
-        List<Tuple<int, MovieModel>> cartLiat = new();
-
         private readonly MockbsterContext _context;
-
-        public OrdersController(MockbsterContext context)
-        {
-            _context = context;
-        }
-
-
+        private CartModel? _cartVm;
+        public OrdersController(MockbsterContext context) { _context = context; }
         public IActionResult Index()
         {
-            CartModel cartVM = new();
-            cartVM.Movies = new();
-            if (HttpContext.Session.GetString("carList") != null)
+            if (HttpContext.Session.GetString("cartList") != null)
             {
-                cartVM = JsonConvert.DeserializeObject<CartModel>(
-                    HttpContext.Session.GetString("carList")!
+                _cartVm = JsonConvert.DeserializeObject<CartModel>(
+                    HttpContext.Session.GetString("cartList")!
                     )!;
             }
-            return View(cartVM);
-
+            return View(_cartVm);
         }
         public IActionResult Edit(int id, int day)
         {
-            CartModel cartVM = new();
-            cartVM.Movies = new();
-            if (HttpContext.Session.GetString("carList") != null)
-            {
-                cartVM = JsonConvert.DeserializeObject<CartModel>(
-                    HttpContext.Session.GetString("carList")!
-                    )!;
-                if (cartVM.Movies[id].Item2 + day > 0 &&
-                    cartVM.Movies[id].Item2 + day < 31)
-                {
-                    cartVM.Movies[id] = new Tuple<int, int, MovieModel>(
-                        cartVM.Movies[id].Item1,
-                        cartVM.Movies[id].Item2 + day,
-                        cartVM.Movies[id].Item3
-                        );
-                    HttpContext.Session.SetString("carList", JsonConvert.SerializeObject(cartVM));
-                }
-            }
+            if (HttpContext.Session.GetString("cartList") == null) 
+                return RedirectToAction(nameof(Index));
+            
+            _cartVm = JsonConvert.DeserializeObject<CartModel>(
+                HttpContext.Session.GetString("cartList")!
+            )!;
+            if (_cartVm.Movies![id].Item2 + day <= 0 || _cartVm.Movies[id].Item2 + day >= 31) 
+                return RedirectToAction(nameof(Index));
+            
+            _cartVm.Movies[id] = new Tuple<int, int, MovieModel>(
+                _cartVm.Movies[id].Item1,
+                _cartVm.Movies[id].Item2 + day,
+                _cartVm.Movies[id].Item3
+            );
+            HttpContext.Session.SetString("cartList", JsonConvert.SerializeObject(_cartVm));
             return RedirectToAction(nameof(Index));
         }
         public IActionResult Delete(int? id)
         {
-            if(id == null)
-            {
-                return NotFound();
-            }
-            CartModel cartVM = new();
-            cartVM.Movies = new();
-            if (HttpContext.Session.GetString("carList") != null)
-            {
-                cartVM = JsonConvert.DeserializeObject<CartModel>(
-                    HttpContext.Session.GetString("carList")!
-                    )!;
-                cartVM.Movies.RemoveAt((int)id);
-                HttpContext.Session.SetString("carList", JsonConvert.SerializeObject(cartVM));
-            }
+            if(id == null) { return NotFound(); }
+            if (HttpContext.Session.GetString("cartList") == null) return RedirectToAction(nameof(Index));
+            
+            _cartVm = JsonConvert.DeserializeObject<CartModel>(
+                HttpContext.Session.GetString("cartList")!
+            )!;
+            _cartVm.Movies.RemoveAt((int)id);
+            HttpContext.Session.SetString("cartList", JsonConvert.SerializeObject(_cartVm));
             return RedirectToAction(nameof(Index));
         }
         public async Task<IActionResult> FinalizeAsync()
         {
-            CartModel cartVM = new();
-            cartVM.Movies = new();
-            if (HttpContext.Session.GetString("carList") != null)
-            {
-                cartVM = JsonConvert.DeserializeObject<CartModel>(
-                    HttpContext.Session.GetString("carList")!
-                    )!;
+            if (HttpContext.Session.GetString("cartList") == null) return RedirectToAction("Index", "Home");
+            
+            _cartVm = JsonConvert.DeserializeObject<CartModel>(
+                HttpContext.Session.GetString("cartList")!
+            )!;
 
-                var users = from m in _context.User
-                            where m.Username == HttpContext.Request.Cookies["loggedUser"]
-                            select m.Id;
-                int uid = await users.FirstOrDefaultAsync();
-                DateTime dayNow = DateTime.Now;
-                foreach (var movie in cartVM.Movies!)
-                {
-                    DateTime dayRent = DateTime.Now.AddDays(movie.Item2);
-                    OrderModel order = new OrderModel
-                    {
-                        UserId = uid,
-                        MovieId = movie.Item1,
-                        OrderBegin = dayNow,
-                        OrderEnd = dayRent,
-                    };
-                    _context.Add(order);
-                    await _context.SaveChangesAsync();
-                }
+            var users = from m in _context.User
+                where m.Username == HttpContext.Request.Cookies["loggedUser"]
+                select m.Id;
+            
+            var uid = await users.FirstOrDefaultAsync();
+            var dayNow = DateTime.Now;
+            foreach (var order in from movie in _cartVm.Movies! 
+                     let dayRent = DateTime.Now.AddDays(movie.Item2) 
+                     select new OrderModel
+                     {
+                         UserId = uid,
+                         MovieId = movie.Item1,
+                         OrderBegin = dayNow,
+                         OrderEnd = dayRent,
+                     })
+            {
+                _context.Add(order);
+                await _context.SaveChangesAsync();
             }
             return RedirectToAction("Index", "Home");
         }
