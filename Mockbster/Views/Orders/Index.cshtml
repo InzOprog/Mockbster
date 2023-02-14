@@ -13,6 +13,9 @@
                 Title
             </th>
             <th>
+                Price
+            </th>
+            <th>
                 Days
             </th>
             <th>
@@ -22,10 +25,13 @@
         </tr>
     </thead>
         <tbody>
-            @foreach (var item in Model.Movies!) {
+            @foreach (var item in Model.Movies) {
             <tr>
                 <td>
                     @Html.DisplayFor(modelItem => item.Item3.Title)
+                </td>
+                <td>
+                    @(item.Item2 * item.Item3.Price)
                 </td>
                 <td>
                     @Html.DisplayFor(modelItem => item.Item2)
@@ -38,8 +44,11 @@
             </tr>
             }
             <tr>
-                <td colspan="3">
+                <td @*colspan="3"*@>
                     <a asp-action="Finalize">Pay</a>
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => Model.Total)
                 </td>
             </tr>
         </tbody>

@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Mockbster.Data;
 
@@ -11,9 +12,11 @@ using Mockbster.Data;
 namespace Mockbster.Migrations
 {
     [DbContext(typeof(MockbsterContext))]
-    partial class MockbsterContextModelSnapshot : ModelSnapshot
+    [Migration("20230214061111_turn")]
+    partial class turn
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -75,8 +78,8 @@ namespace Mockbster.Migrations
                     b.Property<DateTime>("OrderEnd")
                         .HasColumnType("datetime2");
 
-                    b.Property<decimal?>("PaidAmount")
-                        .HasColumnType("decimal(18,2)");
+                    b.Property<double?>("PaidAmount")
+                        .HasColumnType("float");
 
                     b.Property<int>("UserId")
                         .HasColumnType("int");

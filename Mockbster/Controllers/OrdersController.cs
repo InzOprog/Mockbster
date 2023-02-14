@@ -24,8 +24,15 @@ namespace Mockbster.Controllers
                 _cartVm = JsonConvert.DeserializeObject<CartModel>(
                     HttpContext.Session.GetString("cartList")!
                     )!;
+                decimal total = 0;
+                foreach (var item in _cartVm.Movies)
+                {
+                    total += (item.Item2 * item.Item3.Price);
+                }
+                _cartVm.Total = total;
+                return View(_cartVm);
             }
-            return View(_cartVm);
+            return View(new CartModel());
         }
         public IActionResult Edit(int id, int day)
         {
@@ -80,11 +87,13 @@ namespace Mockbster.Controllers
                          MovieId = movie.Item1,
                          OrderBegin = dayNow,
                          OrderEnd = dayRent,
+                         PaidAmount= movie.Item2 * movie.Item3.Price,
                      })
             {
                 _context.Add(order);
                 await _context.SaveChangesAsync();
             }
+            HttpContext.Session.Remove("cartList");
             return RedirectToAction("Index", "Home");
         }
 
