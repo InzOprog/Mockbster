@@ -13,48 +13,47 @@ namespace Mockbster.Controllers
     public class UsersController : Controller
     {
         private readonly MockbsterContext _context;
-
-        public UsersController(MockbsterContext context)
-        {
-            _context = context;
-        }
+        public UsersController(MockbsterContext context) { _context = context; }
 
         public async Task<IActionResult> Index()
         {
-            if (HttpContext.Request.Cookies["loggedUser"] != null)
-            {
-                string uname = HttpContext.Request.Cookies["loggedUser"]!;
-                if (uname == null || _context.User == null)
-                {
-                    return NotFound();
-                }
+            if (HttpContext.Request.Cookies["loggedUser"] == null) return NotFound();
+            
+            var uname = HttpContext.Request.Cookies["loggedUser"];
+            if (uname == null) { return NotFound(); }
 
-                var user = await _context.User
-                    .FirstOrDefaultAsync(m => m.Username == uname);
-                if (user == null)
-                {
-                    return NotFound();
-                }
+            var user = await _context.User.FirstOrDefaultAsync(m => m.Username == uname);
+            if (user == null) { return NotFound(); }
 
-                return View(user);
-            } else
+            var history = from m in _context.Order select m;
+            history = history.Where(m => m.UserId == user.Id);
+
+            var movies = from m in _context.Movie select m;
+
+            var completeOrder = new List<Tuple<string, OrderModel>?>();
+            foreach (var item in history)
             {
-                return NotFound();
+                completeOrder.Add( new Tuple<string, OrderModel>(
+                    movies.FirstOrDefault(m => m.Id == item.MovieId)!.Title, 
+                    item
+                    ));
             }
+            
+            var userPageVm = new UserPageModel
+            {
+                UserData = user,
+                UserHistory = completeOrder
+            };
+            return View(userPageVm);
         }
 
         public async Task<IActionResult> Edit(int? id)
         {
-            if (id == null || _context.User == null)
-            {
-                return NotFound();
-            }
+            if (id == null) { return NotFound(); }
 
             var user = await _context.User.FindAsync(id);
-            if (user == null)
-            {
-                return NotFound();
-            }
+            if (user == null) { return NotFound(); }
+            
             return View(user);
         }
 
@@ -62,32 +61,20 @@ namespace Mockbster.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, [Bind("Id,Firstname,Lastname,Email,Username,Password")] UserModel user)
         {
-            if (id != user.Id)
+            if (id != user.Id) { return NotFound(); }
+            if (!ModelState.IsValid) return View(user);
+            
+            try
             {
-                return NotFound();
+                _context.Update(user);
+                await _context.SaveChangesAsync();
             }
-
-            if (ModelState.IsValid)
+            catch (DbUpdateConcurrencyException)
             {
-                try
-                {
-                    _context.Update(user);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!UserExists(user.Id))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
-                return RedirectToAction(nameof(Index));
+                if (!UserExists(user.Id)) { return NotFound(); }
+                throw;
             }
-            return View(user);
+            return RedirectToAction(nameof(Index));
         }
 
         private bool UserExists(int id)

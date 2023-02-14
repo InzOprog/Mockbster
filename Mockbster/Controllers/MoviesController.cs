@@ -14,31 +14,19 @@ namespace Mockbster.Controllers
     {
         private readonly MockbsterContext _context;
 
-        public MoviesController(MockbsterContext context)
-        {
-            _context = context;
-        }
+        public MoviesController(MockbsterContext context) { _context = context; }
 
         public async Task<IActionResult> Index()
         {
-            return _context.Movie != null ? 
-                          View(await _context.Movie.ToListAsync()) :
-                          Problem("Entity set 'MockbsterContext.Movie'  is null.");
+            return View(await _context.Movie.ToListAsync());
         }
 
         public async Task<IActionResult> Details(int? id, int? day)
         {
-            if (id == null || _context.Movie == null)
-            {
-                return NotFound();
-            }
+            if (id == null) { return NotFound(); }
 
-            var movie = await _context.Movie
-                .FirstOrDefaultAsync(m => m.Id == id);
-            if (movie == null)
-            {
-                return NotFound();
-            }
+            var movie = await _context.Movie.FirstOrDefaultAsync(m => m.Id == id);
+            if (movie == null) { return NotFound(); }
 
             return View(movie);
         }
@@ -52,84 +40,56 @@ namespace Mockbster.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create([Bind("Id,ImgName,Title,ReleaseDate,Genre,Price,Rating")] MovieModel movie)
         {
-            if (ModelState.IsValid)
-            {
-                _context.Add(movie);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
-            }
-            return View(movie);
+            if (!ModelState.IsValid) return View(movie);
+            
+            _context.Add(movie);
+            await _context.SaveChangesAsync();
+            return RedirectToAction(nameof(Index));
         }
 
         public async Task<IActionResult> Edit(int? id)
         {
-            if (id == null || _context.Movie == null)
-            {
-                return NotFound();
-            }
+            if (id == null) { return NotFound(); }
 
             var movie = await _context.Movie.FindAsync(id);
-            if (movie == null)
-            {
-                return NotFound();
-            }
+            if (movie == null) { return NotFound(); }
+            
             return View(movie);
         }
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, [Bind("Id,ImgName,Title,ReleaseDate,Genre,Price,Rating")] MovieModel movie)
         {
-            if (id != movie.Id)
-            {
-                return NotFound();
-            }
+            if (id != movie.Id) { return NotFound(); }
 
-            if (ModelState.IsValid)
+            if (!ModelState.IsValid) return View(movie);
+            
+            try
             {
-                try
-                {
-                    _context.Update(movie);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!MovieExists(movie.Id))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
-                return RedirectToAction(nameof(Index));
+                _context.Update(movie);
+                await _context.SaveChangesAsync();
             }
-            return View(movie);
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!MovieExists(movie.Id)) { return NotFound(); }
+                throw;
+            }
+            return RedirectToAction(nameof(Index));
         }
         public async Task<IActionResult> Delete(int? id)
         {
-            if (id == null || _context.Movie == null)
-            {
-                return NotFound();
-            }
+            if (id == null) { return NotFound(); }
 
-            var movie = await _context.Movie
-                .FirstOrDefaultAsync(m => m.Id == id);
-            if (movie == null)
-            {
-                return NotFound();
-            }
+            var movie = await _context.Movie.FirstOrDefaultAsync(m => m.Id == id);
+            if (movie == null) { return NotFound(); }
 
             return View(movie);
         }
+        
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            if (_context.Movie == null)
-            {
-                return Problem("Entity set 'MockbsterContext.Movie'  is null.");
-            }
             var movie = await _context.Movie.FindAsync(id);
             if (movie != null)
             {

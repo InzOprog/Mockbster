@@ -12,27 +12,19 @@ namespace Mockbster.Controllers
     {
         private readonly MockbsterContext _context;
 
-        public MoviesUserController(MockbsterContext context)
-        {
-            _context = context;
-        }
+        public MoviesUserController(MockbsterContext context) { _context = context; }
         public async Task<IActionResult> Index(
             string? movieGenre,
             string? movieTitle,
             decimal? maxPrice = -1
             )
         {
-            if (_context.Movie == null)
-            {
-                return Problem("Entity set 'MvcMovieContext.Movie'  is null.");
-            }
-
             // Use LINQ to get list of genres.
             IQueryable<string> genreQuery = from m in _context.Movie
                                             orderby m.Genre
                                             select m.Genre;
-            var movies = from m in _context.Movie
-                         select m;
+            
+            var movies = from m in _context.Movie select m;
 
             if (!string.IsNullOrEmpty(movieTitle))
             {
@@ -41,7 +33,7 @@ namespace Mockbster.Controllers
 
             if (!string.IsNullOrEmpty(movieGenre))
             {
-                movies = movies.Where(x => x.Genre.Contains(movieGenre));
+                movies = movies.Where(x => x.Genre!.Contains(movieGenre));
             }
 
             if (maxPrice != -1)
@@ -49,53 +41,47 @@ namespace Mockbster.Controllers
                 movies = movies.Where(x => x.Price <= maxPrice);
             }
 
-            List<string> queryList = new List<string>(await genreQuery.ToListAsync());
-            List<string> genres = new List<string> { };
-            foreach (string line in queryList)
+            var queryList = new List<string>(await genreQuery.ToListAsync());
+            var genres = new List<string>();
+            foreach (var line in queryList)
             {
                 genres.AddRange(line.Split(new[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries));
             }
 
-            var movieGenreVM = new MovieUserModel
+            var movieGenreVm = new MovieUserModel
             {
                 
                 Genres = new SelectList(genres.Distinct()),
                 Movies = await movies.ToListAsync()
             };
 
-            return View(movieGenreVM);
+            return View(movieGenreVm);
         }
 
         public async Task<IActionResult> Rent(int? id)
         {
-            if (id == null || _context.Movie == null)
-            {
-                return NotFound();
-            }
+            if (id == null) { return NotFound(); }
             var movie = await _context.Movie.FirstOrDefaultAsync(m => m.Id == id);
-
-            if (movie == null)
+            if (movie == null) { return NotFound(); }
+            
+            CartModel cartVm = new()
             {
-                return NotFound();
-            }
-            CartModel cartVM = new();
-            cartVM.Movies = new();
-            if (HttpContext.Session.GetString("carList") != null)
+                Movies = new List<Tuple<int, int, MovieModel>>()
+            };
+            
+            if (HttpContext.Session.GetString("cartList") != null)
             {
-                cartVM = JsonConvert.DeserializeObject<CartModel>(
-                    HttpContext.Session.GetString("carList")!
+                cartVm = JsonConvert.DeserializeObject<CartModel>(
+                    HttpContext.Session.GetString("cartList")!
                     )!;
             }
-            var new_item = new Tuple<int, int, MovieModel>((int)id, 1, movie);
-            foreach (var item in cartVM!.Movies)
+            var newItem = new Tuple<int, int, MovieModel>((int)id, 1, movie);
+            if (cartVm!.Movies!.Any(item => item.Item1 == newItem.Item1))
             {
-                if (item.Item1 == new_item.Item1)
-                {
-                    return RedirectToAction( "Index" );
-                }
+                return RedirectToAction( "Index" );
             }
-            cartVM!.Movies!.Add(new_item);
-            HttpContext.Session.SetString("carList", JsonConvert.SerializeObject(cartVM));
+            cartVm!.Movies!.Add(newItem);
+            HttpContext.Session.SetString("cartList", JsonConvert.SerializeObject(cartVm));
             return RedirectToAction("Index");
         }
 
