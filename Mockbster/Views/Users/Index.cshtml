@@ -8,16 +8,20 @@
 
 <table>
     <thead>
-        <tr><th>Details</th></tr>
-        <tr><th>History</th></tr>
+        <tr>
+            <th>Details</th>
+            <th>History</th>
+        </tr>
+        <tr>
+            <th><hr /></th>
+            <th><hr /></th>
+        </tr>
     </thead>
     <tbody>
     @* Details *@
     <tr>
         <td>
             <div>
-                <h4>User</h4>
-                <hr />
                 <dl class="row">
                     <dt class="col-sm-2">
                         @Html.DisplayNameFor(model => model.UserData!.Username)
@@ -56,9 +60,7 @@
                 <a asp-controller="MoviesUser" asp-action="Index">Back to Movies</a>
             </div>
         </td>
-    </tr>
     @* History *@
-    <tr>
         <td>
             <table>
                 <thead>

@@ -14,5 +14,5 @@ public class OrderModel
     [Display(Name = "Rental end date")]
     public DateTime OrderEnd { get; set; }
     [Display(Name = "Rental price")]
-    public double? PaidAmount { get; set; }
+    public decimal? PaidAmount { get; set; }
 }

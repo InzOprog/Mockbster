@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Mockbster.Data;
 
@@ -11,9 +12,11 @@ using Mockbster.Data;
 namespace Mockbster.Migrations
 {
     [DbContext(typeof(MockbsterContext))]
-    partial class MockbsterContextModelSnapshot : ModelSnapshot
+    [Migration("20230214070855_turn2")]
+    partial class turn2
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

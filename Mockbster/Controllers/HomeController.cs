@@ -16,11 +16,7 @@ namespace Mockbster.Controllers
             bool notUsed
             )
         {
-            var defaultResponse = new LoginModel
-            {
-                UserData = new UserModel(),
-                ErrorMessage = ""
-            };
+            var defaultResponse = new LoginModel();
             if ((username == null || password == null) &&
                 HttpContext.Request.Cookies["loggedUser"] == null)
             {
@@ -40,7 +36,7 @@ namespace Mockbster.Controllers
             var cookieUsername = HttpContext.Request.Cookies["loggedUser"];
             
             // User.Username is unique. Expected result for passed both if(){} is one element if user present.
-            defaultResponse.ErrorMessage = "Wrong username or Password";
+            defaultResponse.ErrorMessage = "Wrong Username or Password";
             if (users.Count() != 1 && cookieUsername == null) return View(defaultResponse);
             // If username is null, write cookieUsername to username
            
@@ -51,7 +47,7 @@ namespace Mockbster.Controllers
                 new CookieOptions { Expires = DateTime.Now.AddHours(1) });
 
             // If user is admin, sent to admin page, else to movie rental page
-            return Redirect(users.FirstOrDefault()!.IsAdmin ? "/Movies" : "/MoviesUser");
+            return Redirect(users.FirstOrDefault(m=>m.Username == uname)!.IsAdmin ? "/Movies" : "/MoviesUser");
 
         }
 
